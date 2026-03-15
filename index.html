@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ForensAI – Intelligent Digital Evidence Extraction & Incident Reconstruction</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Sleek dark forensic theme */
+            --bg-deep: #020617;
+            --bg-panel: #020617;
+            --bg-card: #020c1f;
+            --bg-card-alt: #020817;
+
+            --cyan: #22d3ee;
+            --cyan-dim: #0891b2;
+            --cyan-glow: rgba(34, 211, 238, 0.16);
+
+            --blue: #2563eb;
+            --blue-bright: #3b82f6;
+            --indigo: #3730a3;
+            --violet: #7c3aed;
+
+            --accent-orange: #fb923c;
+            --accent-red: #f97373;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+
+            --text-primary: #e5f0ff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+
+            --border: rgba(148, 163, 184, 0.35);
+            --border-glow: rgba(34, 211, 238, 0.45);
+
+            --shadow: 0 18px 60px rgba(15, 23, 42, 0.9);
+            --shadow-glow: 0 0 40px rgba(34, 211, 238, 0.12);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #020617 0, #020617 55%, #000 100%);
+            color: var(--text-primary);
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 400;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Grid noise overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(15, 23, 42, 0.7) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.7) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Scanning line animation */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -100%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0.4;
+            animation: scanline 8s linear infinite;
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% {
+                top: -2px;
+            }
+
+            100% {
+                top: 100vh;
+            }
+        }
+
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px 60px;
+        }
+
+        /* ── HEADER ── */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 32px;
+            border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+            background: linear-gradient(90deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.3), inset 0 0 8px rgba(0, 229, 255, 0.1);
+            flex-shrink: 0;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 16px rgba(0, 229, 255, 0.3), inset 0 0 8px rgba(0, 229, 255, 0.1);
+            }
+
+            50% {
+                box-shadow: 0 0 28px rgba(0, 229, 255, 0.5), inset 0 0 14px rgba(0, 229, 255, 0.2);
+            }
+        }
+
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .brand-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: var(--cyan);
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+        }
+
+        .brand-name span {
+            color: var(--text-primary);
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-family: 'Share Tech Mono', monospace;
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-green);
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.4
+            }
+        }
+
+        .time-display {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-link {
+            padding: 6px 16px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--cyan);
+            border-color: var(--border-glow);
+            background: var(--cyan-glow);
+        }
+
+        /* ── HERO BANNER ── */
+        .hero {
+            text-align: center;
+            padding: 56px 20px 40px;
+            position: relative;
+        }
+
+        .hero-eyebrow {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 4px;
+            color: var(--cyan-dim);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.1s forwards;
+        }
+
+        .hero-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(36px, 5vw, 60px);
+            font-weight: 700;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            line-height: 1.1;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.2s forwards;
+        }
+
+        .hero-title .cyan {
+            color: var(--cyan);
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+        }
+
+        .hero-subtitle {
+            margin-top: 16px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            font-weight: 300;
+            opacity: 0;
+            animation: fadeUp 0.6s 0.35s forwards;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── SECTION HEADERS ── */
+        .section {
+            margin-top: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .section-tag {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border: 1px solid var(--border-glow);
+            border-radius: 2px;
+            background: var(--cyan-glow);
+        }
+
+        .section-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-glow), transparent);
+        }
+
+        /* ── UPLOAD SECTION ── */
+        .upload-zone {
+            border: 2px dashed var(--border-glow);
+            border-radius: 12px;
+            padding: 52px 40px;
+            text-align: center;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.04) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--cyan);
+            background: rgba(0, 229, 255, 0.04);
+            box-shadow: 0 0 32px rgba(0, 229, 255, 0.1);
+        }
+
+        .upload-zone:hover::before {
+            opacity: 1;
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            border: 2px solid var(--border-glow);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 229, 255, 0.05);
+        }
+
+        .upload-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--cyan);
+        }
+
+        .upload-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .upload-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 1px;
+            margin-bottom: 28px;
+        }
+
+        .upload-formats {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .format-badge {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            padding: 4px 10px;
+            border: 1px solid var(--text-muted);
+            border-radius: 3px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.25s;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0077aa, #00b8d9);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(0, 184, 217, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0099cc, #00e5ff);
+            box-shadow: 0 4px 32px rgba(0, 229, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--cyan);
+            border: 1.5px solid var(--cyan);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.1);
+        }
+
+        .btn-outline:hover {
+            background: var(--cyan-glow);
+            box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #b71c1c, #e53935);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(229, 57, 53, 0.3);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 4px 32px rgba(229, 57, 53, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        @keyframes btnPulse {
+            0%, 100% { box-shadow: 0 4px 20px rgba(0, 184, 217, 0.3); }
+            50% { box-shadow: 0 4px 32px rgba(0, 229, 255, 0.6); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: calc(24px + env(safe-area-inset-bottom, 0));
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 14px 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            color: var(--accent-green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            box-shadow: var(--shadow-glow);
+            z-index: 1000;
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ── STAT CARDS ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .stat-card.evidence::before {
+            background: linear-gradient(90deg, var(--blue-bright), var(--cyan));
+        }
+
+        .stat-card.suspicious::before {
+            background: linear-gradient(90deg, var(--accent-orange), #ff9100);
+        }
+
+        .stat-card.risk::before {
+            background: linear-gradient(90deg, var(--accent-red), #ff5252);
+        }
+
+        .stat-card.severity::before {
+            background: linear-gradient(90deg, #7c4dff, #651fff);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow), var(--shadow-glow);
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .stat-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            line-height: 1.6;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.evidence {
+            background: rgba(41, 121, 255, 0.15);
+        }
+
+        .stat-icon.suspicious {
+            background: rgba(255, 109, 0, 0.15);
+        }
+
+        .stat-icon.risk {
+            background: rgba(255, 23, 68, 0.15);
+        }
+
+        .stat-icon.severity {
+            background: rgba(124, 77, 255, 0.15);
+        }
+
+        .stat-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .stat-icon.evidence svg {
+            stroke: var(--blue-bright);
+        }
+
+        .stat-icon.suspicious svg {
+            stroke: var(--accent-orange);
+        }
+
+        .stat-icon.risk svg {
+            stroke: var(--accent-red);
+        }
+
+        .stat-icon.severity svg {
+            stroke: #7c4dff;
+        }
+
+        .stat-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-card.evidence .stat-value {
+            color: var(--cyan);
+        }
+
+        .stat-card.suspicious .stat-value {
+            color: var(--accent-orange);
+        }
+
+        .stat-card.risk .stat-value {
+            color: var(--accent-red);
+        }
+
+        .stat-card.severity .stat-value {
+            color: #aa80ff;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            animation: fillBar 1.5s ease-out forwards;
+        }
+
+        @keyframes fillBar {
+            from {
+                width: 0;
+            }
+        }
+
+        .evidence .stat-bar-fill {
+            width: 72%;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+        }
+
+        .suspicious .stat-bar-fill {
+            width: 45%;
+            background: linear-gradient(90deg, #e65100, var(--accent-orange));
+        }
+
+        .risk .stat-bar-fill {
+            width: 81%;
+            background: linear-gradient(90deg, #b71c1c, var(--accent-red));
+        }
+
+        .severity .stat-bar-fill {
+            width: 65%;
+            background: linear-gradient(90deg, #4527a0, #7c4dff);
+        }
+
+        /* ── TABLE ── */
+        .table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .table-toolbar-left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            color: var(--text-muted);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-glow);
+        }
+
+        .record-count {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            padding: 14px 20px;
+            text-align: left;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card-alt);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(0, 229, 255, 0.04);
+            transition: background 0.2s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 229, 255, 0.04);
+        }
+
+        tbody td {
+            padding: 16px 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            vertical-align: middle;
+        }
+
+        .ts {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .event-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .event-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .priority-score {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .threat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .threat-critical {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 23, 68, 0.3);
+        }
+
+        .threat-high {
+            background: rgba(255, 109, 0, 0.15);
+            color: var(--accent-orange);
+            border: 1px solid rgba(255, 109, 0, 0.3);
+        }
+
+        .threat-medium {
+            background: rgba(255, 215, 64, 0.1);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(255, 215, 64, 0.3);
+        }
+
+        .threat-low {
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+        }
+
+        /* ── TIMELINE ── */
+        .timeline {
+            position: relative;
+            padding-left: 36px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: linear-gradient(180deg, var(--cyan) 0%, rgba(0, 229, 255, 0.1) 100%);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 28px;
+            opacity: 0;
+            animation: fadeUp 0.5s forwards;
+        }
+
+        .timeline-item:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .timeline-item:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .timeline-item:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .timeline-item:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .timeline-item:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .timeline-item:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -33px;
+            top: 6px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-deep);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .timeline-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 18px 20px;
+            transition: all 0.3s;
+        }
+
+        .timeline-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .timeline-time {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .timeline-event {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .timeline-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ── ATTACK STORY ── */
+        .attack-story {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 36px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .attack-story::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--cyan), var(--blue-bright));
+            border-radius: 12px 0 0 12px;
+        }
+
+        .story-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .story-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .meta-item span {
+            color: var(--cyan);
+        }
+
+        .story-body {
+            font-size: 14px;
+            line-height: 1.9;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            padding-top: 24px;
+        }
+
+        .story-body p {
+            margin-bottom: 16px;
+        }
+
+        .story-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .story-highlight {
+            color: var(--cyan);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+        }
+
+        .story-alert {
+            display: inline;
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        .story-path {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            background: rgba(0, 229, 255, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 8px;
+            color: var(--cyan-dim);
+        }
+
+        /* ── DOWNLOAD SECTION ── */
+        .download-section {
+            background: linear-gradient(135deg, rgba(11, 22, 40, 0.9), rgba(15, 30, 53, 0.9));
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 48px rgba(0, 229, 255, 0.06);
+        }
+
+        .download-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center top, rgba(0, 229, 255, 0.07) 0%, transparent 70%);
+        }
+
+        .download-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .download-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .download-btn-wrap {
+            position: relative;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            margin-top: 60px;
+            padding: 24px 32px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-brand {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--cyan);
+        }
+
+        .footer-info {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-align: right;
+        }
+
+        /* ── MISC ── */
+        .tag-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .tag {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            padding: 3px 10px;
+            border: 1px solid;
+            border-radius: 2px;
+            letter-spacing: 1px;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                flex-wrap: wrap;
+            }
+
+            .header-right .status-badge,
+            .header-right .time-display {
+                display: none;
+            }
+
+            .header-right {
+                flex: 1 1 100%;
+                justify-content: flex-start;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 11px;
+                letter-spacing: 1px;
+                min-height: 40px;
+            }
+        }
+
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 768px) {
+            main {
+                padding: 0 16px 40px;
+            }
+
+            header {
+                padding: 14px 16px;
+                gap: 12px;
+            }
+
+            .logo-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .logo-icon svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .brand-name {
+                font-size: 20px;
+                letter-spacing: 2px;
+            }
+
+            .brand-sub {
+                font-size: 9px;
+                letter-spacing: 1px;
+            }
+
+            .hero {
+                padding: 32px 16px 28px;
+            }
+
+            .hero-eyebrow {
+                font-size: 10px;
+                letter-spacing: 2px;
+            }
+
+            .hero-title {
+                font-size: clamp(28px, 8vw, 48px);
+                letter-spacing: 3px;
+            }
+
+            .hero-subtitle {
+                font-size: 13px;
+                padding: 0 8px;
+            }
+
+            .section {
+                margin-top: 32px;
+            }
+
+            .section-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .section-title {
+                font-size: 14px;
+                letter-spacing: 2px;
+            }
+
+            .upload-zone {
+                padding: 32px 20px;
+            }
+
+            .upload-icon {
+                width: 52px;
+                height: 52px;
+                margin-bottom: 16px;
+            }
+
+            .upload-icon svg {
+                width: 26px;
+                height: 26px;
+            }
+
+            .upload-title {
+                font-size: 16px;
+            }
+
+            .upload-desc {
+                font-size: 12px;
+                margin-bottom: 20px;
+            }
+
+            .upload-formats {
+                gap: 6px;
+                margin-bottom: 24px;
+            }
+
+            .btn-row {
+                gap: 12px;
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+                padding: 14px 20px;
+                min-height: 48px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .stat-card {
+                padding: 20px 16px;
+            }
+
+            .stat-value {
+                font-size: 36px;
+            }
+
+            .stat-label {
+                font-size: 9px;
+            }
+
+            .table-wrapper {
+                border-radius: 8px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .table-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 14px 16px;
+            }
+
+            .table-toolbar-left {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .filter-btn {
+                padding: 8px 12px;
+                font-size: 10px;
+            }
+
+            table {
+                min-width: 600px;
+            }
+
+            thead th, tbody td {
+                padding: 12px 14px;
+                font-size: 12px;
+            }
+
+            .ts {
+                font-size: 11px;
+            }
+
+            .download-section {
+                padding: 28px 20px;
+            }
+
+            .download-section .btn-row {
+                flex-direction: column;
+            }
+
+            .download-section .btn {
+                width: 100%;
+            }
+
+            footer {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px 16px;
+                padding-bottom: calc(20px + env(safe-area-inset-bottom, 0));
+            }
+
+            .footer-info {
+                text-align: center;
+            }
+
+            .toast {
+                left: 16px;
+                right: 16px;
+                width: auto;
+                transform: translateX(0) translateY(100px);
+                font-size: 11px;
+                padding: 12px 20px;
+            }
+
+            .toast.show {
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            main {
+                padding: 0 12px 32px;
+            }
+
+            header {
+                padding: 12px 12px;
+            }
+
+            .brand-name {
+                font-size: 18px;
+                letter-spacing: 1px;
+            }
+
+            .brand-sub {
+                display: none;
+            }
+
+            .hero {
+                padding: 24px 12px 20px;
+            }
+
+            .hero-title {
+                font-size: 26px;
+            }
+
+            .upload-zone {
+                padding: 24px 16px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 42px;
+            }
+
+            .section-tag {
+                font-size: 9px;
+            }
+
+            .timeline {
+                padding-left: 28px;
+            }
+
+            .timeline-dot {
+                width: 10px;
+                height: 10px;
+                left: -25px;
+            }
+
+            .timeline-card {
+                padding: 14px 16px;
+            }
+
+            .attack-story {
+                padding: 24px 20px;
+            }
+
+            .btn-row[style*="margin-top"] {
+                margin-top: 16px !important;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .upload-formats {
+                justify-content: flex-start;
+            }
+
+            .format-badge {
+                font-size: 9px;
+                padding: 3px 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-left">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.8" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+            </div>
+            <div>
+                <div class="brand-name"><span>Forens</span>AI</div>
+                <div class="brand-sub">Intelligent Digital Evidence Analysis Dashboard</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                UPLINK READY
+            </div>
+            <div class="time-display" id="clock">00:00:00 UTC</div>
+            <nav class="nav-links">
+                <a class="nav-link active" href="#section-upload">DASHBOARD</a>
+                <a class="nav-link" href="#section-events">LOGS</a>
+                <a class="nav-link" href="#section-timeline">TIMELINE</a>
+                <a class="nav-link" href="#section-export">REPORTS</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- HERO -->
+        <div class="hero">
+            <div class="hero-eyebrow">// FORENSIC INTELLIGENCE PLATFORM v3.2.1</div>
+            <h1 class="hero-title"><span class="cyan">Forens</span>AI</h1>
+            <p class="hero-subtitle">Intelligent Digital Evidence Extraction &amp; Incident Reconstruction System</p>
+        </div>
+
+        <!-- UPLOAD SECTION -->
+        <div class="section" id="section-upload">
+            <div class="section-header">
+                <span class="section-tag">01</span>
+                <span class="section-title">Evidence Ingestion</span>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="upload-zone" id="upload-zone">
+                <input type="file" id="file-input" hidden>
+                <div class="upload-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                </div>
+                <div class="upload-title">Drag & Drop Evidence Files</div>
+                <div class="upload-desc" id="file-name-display">// or click to browse your file system</div>
+                <div class="upload-formats">
+                    <span class="format-badge">.LOG</span>
+                    <span class="format-badge">.PCAP</span>
+                    <span class="format-badge">.EVTX</span>
+                    <span class="format-badge">.JSON</span>
+                    <span class="format-badge">.CSV</span>
+                    <span class="format-badge">.DB</span>
+                    <span class="format-badge">.IMG</span>
+                    <span class="format-badge">.RAW</span>
+                </div>
+            </div>
+            <div class="btn-row" style="margin-top:20px;justify-content:center">
+                <button class="btn btn-primary" id="analyze-btn" disabled type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    RECONSTRUCT EVIDENCE
+                </button>
+            </div>
+        </div>
+
+        <!-- DASHBOARD STATS -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-tag">02</span>
+                <span class="section-title">Analysis Overview</span>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="cards-grid">
+                <div class="stat-card evidence">
+                    <div class="stat-card-header">
+                        <div>
+                            <div class="stat-label">Extracted Evidence<br>Count</div>
+                        </div>
+                        <div class="stat-icon evidence">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="evidence-count">0</div>
+                    <div class="stat-trend" id="evidence-trend">SYSTEM IDLE</div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill bar"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card suspicious">
+                    <div class="stat-card-header">
+                        <div>
+                            <div class="stat-label">Suspicious Items<br>Found</div>
+                        </div>
+                        <div class="stat-icon suspicious">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="suspicious-count">0</div>
+                    <div class="stat-trend" id="suspicious-trend">// WAITING FOR DATA</div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill bar"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card risk">
+                    <div class="stat-card-header">
+                        <div>
+                            <div class="stat-label">Case Risk<br>Score</div>
+                        </div>
+                        <div class="stat-icon risk">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="risk-score">0</div>
+                    <div class="stat-trend" id="risk-trend">NOMINAL</div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill bar"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card severity">
+                    <div class="stat-card-header">
+                        <div>
+                            <div class="stat-label">Incident Severity<br>Level</div>
+                        </div>
+                        <div class="stat-icon severity">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="severity-level">--</div>
+                    <div class="stat-trend" id="severity-trend">AWAITING SCAN</div>
+                    <div class="stat-bar">
+                        <div class="stat-bar-fill bar" style="width: 0;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUSPICIOUS EVENTS TABLE -->
+        <div class="section" id="section-events">
+            <div class="section-header">
+                <span class="section-tag">03</span>
+                <span class="section-title">Suspicious Events Log</span>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="table-wrapper">
+                <div class="table-toolbar">
+                    <div class="table-toolbar-left">
+                        <button class="filter-btn active" data-filter="ALL">ALL</button>
+                        <button class="filter-btn" data-filter="CRITICAL">CRITICAL</button>
+                        <button class="filter-btn" data-filter="HIGH">HIGH</button>
+                        <button class="filter-btn" data-filter="MEDIUM">MEDIUM</button>
+                    </div>
+                    <div class="record-count" id="record-count">AWAITING INGESTION</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event Type</th>
+                            <th>Description</th>
+                            <th>Score</th>
+                            <th>Threat Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-table-body">
+                        <tr id="table-placeholder">
+                            <td colspan="5"
+                                style="text-align:center;padding:48px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;letter-spacing:2px;">
+                                // AWAITING INGESTION — UPLOAD LOG FILE TO BEGIN ANALYSIS</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TIMELINE + ATTACK STORY -->
+        <div class="two-col section" id="section-timeline">
+            <!-- TIMELINE -->
+            <div>
+                <div class="section-header">
+                    <span class="section-tag">04</span>
+                    <span class="section-title">Timeline Reconstruction</span>
+                    <div class="section-line"></div>
+                </div>
+
+                <div id="incident-timeline">
+                    <div id="timeline-placeholder" style="padding:40px;text-align:center;color:var(--text-muted);font-family:'Share Tech Mono',monospace;letter-spacing:2px;">
+                        // UPLOAD EVIDENCE TO RECONSTRUCT TIMELINE
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATTACK STORY -->
+            <div id="reconstruction-narrative">
+                <div class="section-header">
+                    <span class="section-tag">05</span>
+                    <span class="section-title">AI-Generated Attack Narrative</span>
+                    <div class="section-line"></div>
+                </div>
+
+                <div class="attack-story" id="attack-narrative">
+                    <div id="narrative-placeholder"
+                        style="padding:40px;text-align:center;color:var(--text-secondary);font-family:'Share Tech Mono',monospace;letter-spacing:2px;">
+                        // UPLOAD & ANALYZE TO GENERATE AI INCIDENT NARRATIVE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOWNLOAD -->
+        <div class="section" id="section-export">
+            <div class="section-header">
+                <span class="section-tag">06</span>
+                <span class="section-title">Export Forensic Report</span>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="download-section" id="export-section" style="opacity: 0.5; pointer-events: none;">
+                <div class="download-title">Forensic Report Ready for Export</div>
+                <div class="download-sub" id="export-sub">// Ingest evidence to generate archive packages</div>
+                <div class="download-btn-wrap">
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="btn-export-txt">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Download TXT Report
+                        </button>
+                        <button class="btn btn-outline" id="btn-export-json">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Export JSON IOCs
+                        </button>
+                        <button class="btn btn-outline" id="btn-export-csv">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="18" cy="5" r="3" />
+                                <circle cx="6" cy="12" r="3" />
+                                <circle cx="18" cy="19" r="3" />
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                            </svg>
+                            Export CSV Table
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <footer>
+        <div class="footer-brand">FORENSAI</div>
+        <div class="footer-info">
+            <div>Case: IR-2024-0847 · Analyst: SYS_AUTO · Classification: CONFIDENTIAL</div>
+            <div style="margin-top:4px;">ForensAI v3.2.1 · Digital Forensics Intelligence Platform · © 2024</div>
+        </div>
+    </footer>
+
+    <script>
+        /* ─── LIVE UTC CLOCK ─── */
+        function updateClock() {
+            const now = new Date();
+            const clock = document.getElementById('clock');
+            if (clock) {
+                clock.textContent =
+                    String(now.getUTCHours()).padStart(2, '0') + ':' +
+                    String(now.getUTCMinutes()).padStart(2, '0') + ':' +
+                    String(now.getUTCSeconds()).padStart(2, '0') + ' UTC';
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        /* ─── APP STATE ─── */
+        let lastAnalysisData = null;
+        let lastFileName = '';
+        let allAnomalies = [];
+        let currentFilter = 'ALL';
+        const API = (() => {
+            const h = window.location.hostname;
+            const p = parseInt(window.location.port, 10) || (window.location.protocol === 'https:' ? 443 : 80);
+            if (h === '127.0.0.1' || h === 'localhost') return p === 5000 ? window.location.origin : 'http://127.0.0.1:5000';
+            return window.location.origin;
+        })();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('file-input');
+            const uploadZone = document.getElementById('upload-zone');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            const tableBody = document.getElementById('events-table-body');
+            const recordCount = document.getElementById('record-count');
+
+            /* Table Filter Buttons */
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentFilter = btn.dataset.filter;
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    applyTableFilter();
+                });
+            });
+
+            /* Smooth Scroll & Nav Active State */
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', e => {
+                    const href = link.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if (target) target.scrollIntoView({ behavior: 'smooth' });
+                        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            /* Upload Interaction */
+            uploadZone.addEventListener('click', (e) => {
+                // Ignore if the click was on the button
+                if (e.target.closest('#analyze-btn')) return;
+                // Ignore if the click originates from the file input itself to prevent infinite loop
+                if (e.target === fileInput) return;
+                fileInput.click();
+            });
+
+            uploadZone.addEventListener('dragover', e => {
+                e.preventDefault();
+                uploadZone.style.borderColor = 'var(--cyan)';
+                uploadZone.style.background = 'var(--cyan-glow)';
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.style.borderColor = '';
+                uploadZone.style.background = '';
+            });
+
+            uploadZone.addEventListener('drop', e => {
+                e.preventDefault();
+                uploadZone.style.borderColor = '';
+                uploadZone.style.background = '';
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) handleFileSelect(fileInput.files[0]);
+            });
+
+            function handleFileSelect(file) {
+                lastFileName = file.name;
+                fileNameDisplay.textContent = `READY: ${file.name.toUpperCase()}`;
+                fileNameDisplay.style.color = 'var(--cyan)';
+                analyzeBtn.disabled = false;
+                analyzeBtn.style.animation = 'btnPulse 1.5s infinite';
+            }
+
+            /* Analysis Logic */
+            analyzeBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!fileInput.files.length) {
+                    alert('Please upload an evidence file before reconstructing.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                analyzeBtn.disabled = true;
+                analyzeBtn.classList.add('loading');
+                analyzeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg> ANALYZING...';
+
+                try {
+                    const response = await fetch(`${API}/api/analyze/logs`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error(`Link broken: ${response.status}`);
+
+                    const data = await response.json();
+                    lastAnalysisData = data;
+                    updateUI(data);
+                    showToast(`ANALYSIS COMPLETE — ${data.parsed_count} records · ${data.anomalies.length} anomalies`);
+
+                } catch (err) {
+                    fileNameDisplay.textContent = `CONNECTION ERROR: ${err.message.toUpperCase()}`;
+                    fileNameDisplay.style.color = 'var(--accent-red)';
+                } finally {
+                    analyzeBtn.classList.remove('loading');
+                    analyzeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> RECONSTRUCT EVIDENCE';
+                    analyzeBtn.disabled = !fileInput.files.length;
+                }
+            });
+
+            function updateUI(data) {
+                const { parsed_count, anomalies, summary } = data;
+                const risk = Math.min(10, (summary.critical * 3) + (summary.high * 1.8) + (anomalies.length * 0.1)).toFixed(1);
+
+                /* Counters */
+                animateValue('evidence-count', 0, parsed_count, 1500);
+                animateValue('suspicious-count', 0, anomalies.length, 1500);
+                animateValue('risk-score', 0, risk, 1500, true);
+
+                /* Trend markers */
+                document.getElementById('evidence-trend').textContent = `+${parsed_count} records parsed`;
+                document.getElementById('suspicious-trend').textContent = `${anomalies.length} artifacts flagged`;
+
+                const riskTrend = document.getElementById('risk-trend');
+                if (risk >= 7.5) riskTrend.innerHTML = '<span style="color:var(--accent-red)">CRITICAL THREAT</span>';
+                else if (risk >= 4) riskTrend.innerHTML = '<span style="color:var(--accent-orange)">ELEVATED ALERT</span>';
+                else riskTrend.innerHTML = '<span style="color:var(--accent-green)">STABLE</span>';
+
+                /* Severity index */
+                let pLevel = 'P4';
+                if (summary.critical > 0) pLevel = 'P1';
+                else if (summary.high > 0) pLevel = 'P2';
+                else if (summary.medium > 0) pLevel = 'P3';
+                document.getElementById('severity-level').textContent = pLevel;
+                document.getElementById('severity-trend').textContent = pLevel === 'P1' ? 'IMMEDIATE ESCALATION' : pLevel === 'P2' ? 'ELEVATED REVIEW' : pLevel === 'P3' ? 'ROUTINE SCAN' : 'NOMINAL';
+
+                /* Progress Bars */
+                document.querySelectorAll('.stat-bar-fill.bar').forEach((bar, idx) => {
+                    if (idx === 0) bar.style.width = `${Math.min(100, (parsed_count / 2000) * 100)}%`;
+                    if (idx === 1) bar.style.width = `${Math.min(100, (anomalies.length / 50) * 100)}%`;
+                    if (idx === 2) bar.style.width = `${risk * 10}%`;
+                    if (idx === 3) bar.style.width = `90%`;
+                });
+
+                /* Table */
+                allAnomalies = anomalies;
+                applyTableFilter();
+
+                /* Timeline */
+                renderTimeline(anomalies);
+
+                /* Narrative */
+                renderNarrative(data, risk);
+
+                /* Export */
+                const exp = document.getElementById('export-section');
+                exp.style.opacity = '1';
+                exp.style.pointerEvents = 'auto';
+                document.getElementById('export-sub').textContent = `// Reconstruction complete. Ready for archive.`;
+
+                fileNameDisplay.textContent = `SCAN COMPLETE: ${parsed_count} OBJECTS`;
+            }
+
+            function animateValue(id, start, end, duration, isFloat = false) {
+                const obj = document.getElementById(id);
+                if (!obj) return;
+                const startTime = performance.now();
+
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const current = start + (end - start) * progress;
+
+                    obj.textContent = isFloat ? current.toFixed(1) : Math.floor(current);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    }
+                }
+                requestAnimationFrame(update);
+            }
+
+            function getSeverityColor(severity) {
+                if (severity === 'Critical') return 'var(--accent-red)';
+                if (severity === 'High') return 'var(--accent-orange)';
+                if (severity === 'Medium') return 'var(--accent-yellow)';
+                return 'var(--accent-green)';
+            }
+
+            function getBadgeClass(severity) {
+                if (severity === 'Critical') return 'threat-critical';
+                if (severity === 'High') return 'threat-high';
+                if (severity === 'Medium') return 'threat-medium';
+                return 'threat-low';
+            }
+
+            function applyTableFilter() {
+                const filtered = currentFilter === 'ALL'
+                    ? allAnomalies
+                    : allAnomalies.filter(a => a.severity.toUpperCase() === currentFilter);
+                renderTable(filtered);
+                recordCount.textContent = allAnomalies.length
+                    ? `SHOWING ${filtered.length} OF ${allAnomalies.length} ANOMALIES`
+                    : 'AWAITING INGESTION';
+            }
+
+            function renderTable(anomalies) {
+                tableBody.innerHTML = '';
+                if (!anomalies.length) {
+                    const msg = allAnomalies.length
+                        ? `// NO ${currentFilter} ENTRIES — ${allAnomalies.length} TOTAL ANOMALIES`
+                        : '// AWAITING INGESTION — UPLOAD LOG FILE TO BEGIN ANALYSIS';
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:48px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;letter-spacing:2px;">${msg}</td></tr>`;
+                    return;
+                }
+
+                anomalies.forEach(a => {
+                    const sevColor = getSeverityColor(a.severity);
+                    const badgeClass = getBadgeClass(a.severity);
+                    const score = a.severity === 'Critical' ? '9.8' : a.severity === 'High' ? '8.5' : a.severity === 'Medium' ? '6.5' : '5.0';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="ts">${escapeHtml(a.timestamp)}</td>
+                        <td><span class="event-type"><span class="event-dot" style="background:${sevColor};box-shadow:0 0 6px ${sevColor}"></span>${escapeHtml(a.type)}</span></td>
+                        <td style="max-width:300px;font-size:12px">${escapeHtml(a.description)}</td>
+                        <td class="priority-score" style="color:${sevColor}">${score}</td>
+                        <td><span class="threat-badge ${badgeClass}">${escapeHtml(a.severity)}</span></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function renderTimeline(anomalies) {
+                const tl = document.getElementById('incident-timeline');
+                if (!anomalies.length) {
+                    tl.innerHTML = '<div id="timeline-placeholder" style="padding:40px;text-align:center;color:var(--text-muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:2px;">// NO PHASE DATA — LOG CLEAN OR NO ANOMALIES</div>';
+                    return;
+                }
+
+                tl.innerHTML = anomalies.map(a => {
+                    const sevColor = getSeverityColor(a.severity);
+                    return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background:${sevColor};color:${sevColor}"></div>
+                        <div class="timeline-card">
+                            <div class="timeline-time">${escapeHtml(a.timestamp)}</div>
+                            <div class="timeline-event" style="color:${sevColor}">${escapeHtml(a.type)}</div>
+                            <div class="timeline-detail">${escapeHtml(a.description)}</div>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+
+            function renderNarrative(data, risk) {
+                const box = document.getElementById('attack-narrative');
+                const { parsed_count, anomalies } = data;
+
+                box.innerHTML = `
+                    <div class="story-body">
+                        <p style="color:var(--cyan); font-family:'Share Tech Mono', monospace; margin-bottom:12px;">// FORENSAI ANALYTICS REPORT</p>
+                        <p>Analysis of <span class="story-highlight">${lastFileName}</span> involves the audit of <span class="cyan">${parsed_count} telemetry points</span>.</p>
+                        ${anomalies.length > 0 ? `
+                        <p style="margin-top:12px">Detected <span class="story-alert">${anomalies.length} anomaly clusters</span> indicating potential unauthorized activity. Composite risk factor indexed at <span class="story-alert">${risk}</span>. Reconstruction suggests an active incident.</p>
+                        ` : `
+                        <p style="margin-top:12px">Zero anomalies detected. Threat landscape remains nominal.</p>
+                        `}
+                    </div>
+                `;
+            }
+
+            async function serverExport(endpoint) {
+                if (!lastAnalysisData) {
+                    alert('No analysis data to export. Please upload and analyze a log file first.');
+                    return;
+                }
+                try {
+                    const r = await fetch(`${API}/api/export/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...lastAnalysisData, filename: lastFileName })
+                    });
+                    if (!r.ok) throw new Error(`Export failed: ${r.status}`);
+                    const blob = await r.blob();
+                    const disposition = r.headers.get('Content-Disposition');
+                    let filename = `ForensAI_Report_${new Date().toISOString().slice(0,10)}.${endpoint === 'txt' ? 'txt' : endpoint === 'json' ? 'json' : 'csv'}`;
+                    if (disposition) {
+                        const match = disposition.match(/filename[*]?=['"]?(?:UTF-8'')?([^'";\n]+)['"]?/i) || disposition.match(/filename=([^;]+)/);
+                        if (match && match[1]) filename = match[1].trim().replace(/['"]/g, '');
+                    }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    alert(`Export failed: ${err.message}`);
+                }
+            }
+
+            document.getElementById('btn-export-txt').addEventListener('click', () => serverExport('txt'));
+            document.getElementById('btn-export-json').addEventListener('click', () => serverExport('json'));
+            document.getElementById('btn-export-csv').addEventListener('click', () => serverExport('csv'));
+
+            /* Initial Backend Status Check */
+            fetch(`${API}/api/status`).then(r => r.json()).then(() => {
+                const badge = document.querySelector('.status-badge');
+                if (badge) { badge.innerHTML = '<div class="status-dot"></div> UPLINK READY'; badge.style.color = ''; }
+            }).catch(() => {
+                const badge = document.querySelector('.status-badge');
+                if (badge) { badge.innerHTML = '<div class="status-dot" style="background:var(--accent-red);box-shadow:0 0 8px var(--accent-red)"></div> BACKEND OFFLINE'; badge.style.color = 'var(--accent-red)'; }
+            });
+        });
+    </script>
+</body>
+
+</html>
